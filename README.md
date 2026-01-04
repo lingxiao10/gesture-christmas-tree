@@ -62,3 +62,6 @@ https://github.com/user-attachments/assets/96b0f849-16f2-4c8c-b4fb-4f86f91090a8
 - 为获得最佳效果，建议在光线充足的环境下使用
 
 祝大家圣诞快乐！🎄
+
+欢迎加群交流
+![qun](https://github.com/user-attachments/assets/bfa8ed6a-173d-490e-bc16-9baab882d64f)
