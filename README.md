@@ -29,6 +29,7 @@
 
 1. 克隆或下载本项目
 2. 在浏览器中打开 `index.html` 文件(注意，必须要放到server里，用地址打开，而不是直接点开)，如果不会弄server，可以访问这个：
+https://devokai.xfeixie.com/js_tree_project/index.html
 3. 允许摄像头权限以启用手势控制
 4. 使用不同手势与圣诞树互动：
     - 握拳使粒子聚合为树形
