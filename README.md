@@ -67,4 +67,5 @@ https://github.com/user-attachments/assets/96b0f849-16f2-4c8c-b4fb-4f86f91090a8
 
 祝大家圣诞快乐！🎄
 
-欢迎加我交流：linginlove
+欢迎加群交流：
+![qun](https://github.com/user-attachments/assets/38bbf839-e14e-4a5b-bb18-e3e7e4b3a6a4)
