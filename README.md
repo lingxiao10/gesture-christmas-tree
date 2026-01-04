@@ -1,6 +1,7 @@
 # 手势控制圣诞树 (Gesture-Controlled Christmas Tree)
 
 一个交互式的3D圣诞树体验，通过手势控制来改变圣诞树的形态和展示效果，还可以添加个人照片来定制专属节日氛围。
+全部代码都是用 Devokai（内置Gemini pro 3）生成
 
 ## ✨ 功能特点
 
