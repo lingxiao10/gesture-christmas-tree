@@ -1,0 +1,1270 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Grand Luxury Tree Final v2</title>
+    <style>
+      body {
+        margin: 0;
+        overflow: hidden;
+        background-color: #000000;
+        font-family: 'Times New Roman', serif;
+      }
+      #canvas-container {
+        width: 100vw;
+        height: 100vh;
+        position: absolute;
+        top: 0;
+        left: 0;
+        z-index: 1;
+      }
+
+      /* UI Overlay - Minimalist */
+      #ui-layer {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        z-index: 10;
+        pointer-events: none;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding-top: 40px;
+        box-sizing: border-box;
+        /* Remove transition here as we don't hide the whole layer anymore */
+      }
+
+      /* When hidden class is applied to specific elements */
+      .ui-hidden {
+        opacity: 0;
+        pointer-events: none !important;
+      }
+
+      /* Loading */
+      #loader {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: #000;
+        z-index: 100;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        transition: opacity 0.8s ease-out;
+      }
+      .loader-text {
+        color: #d4af37;
+        font-size: 14px;
+        letter-spacing: 4px;
+        margin-top: 20px;
+        text-transform: uppercase;
+        font-weight: 100;
+      }
+      .spinner {
+        width: 40px;
+        height: 40px;
+        border: 1px solid rgba(212, 175, 55, 0.2);
+        border-top: 1px solid #d4af37;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+      }
+      @keyframes spin {
+        0% {
+          transform: rotate(0deg);
+        }
+        100% {
+          transform: rotate(360deg);
+        }
+      }
+
+      /* Typography - Centerpiece */
+      h1 {
+        color: #fceea7;
+        font-size: 56px;
+        margin: 0;
+        font-weight: 400;
+        letter-spacing: 6px;
+        text-shadow: 0 0 50px rgba(252, 238, 167, 0.6);
+        background: linear-gradient(to bottom, #fff, #eebb66);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        font-family: 'Cinzel', 'Times New Roman', serif;
+        opacity: 0.9;
+        transition: opacity 0.5s ease; /* Ensure smooth transitions if needed */
+      }
+
+      /* Upload Button - Restored & Elegant */
+      .upload-wrapper {
+        position: absolute;
+        top: 40px;
+        right: 40px;
+        pointer-events: auto;
+        text-align: center;
+        transition: opacity 0.5s ease; /* Add transition for smooth hiding */
+      }
+      .upload-btn {
+        background: rgba(20, 20, 20, 0.6);
+        border: 1px solid rgba(212, 175, 55, 0.4);
+        color: #d4af37;
+        padding: 10px 25px;
+        cursor: pointer;
+        text-transform: uppercase;
+        letter-spacing: 3px;
+        font-size: 10px;
+        transition: all 0.4s;
+        display: inline-block;
+        backdrop-filter: blur(5px);
+      }
+      .upload-btn:hover {
+        background: #d4af37;
+        color: #000;
+        box-shadow: 0 0 20px rgba(212, 175, 55, 0.5);
+      }
+      .hint-text {
+        color: rgba(212, 175, 55, 0.5);
+        font-size: 9px;
+        margin-top: 8px;
+        letter-spacing: 1px;
+        text-transform: uppercase;
+      }
+
+      #file-input {
+        display: none;
+      }
+
+      /* Webcam feedback */
+      #webcam-wrapper {
+        position: absolute;
+        bottom: 40px;
+        right: 40px;
+        width: 160px;
+        height: 120px;
+        border: 2px solid rgba(212, 175, 55, 0.6);
+        border-radius: 4px;
+        overflow: hidden;
+        opacity: 1;
+        pointer-events: none;
+        background-color: rgba(0, 0, 0, 0.7);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 0 10px rgba(212, 175, 55, 0.3);
+        z-index: 50;
+      }
+
+      #webcam-preview {
+        width: 100%;
+        height: 100%;
+        display: block;
+      }
+
+      /* 帮助面板 - 左侧 */
+      #help-panel {
+        position: absolute;
+        top: 20px;
+        left: 20px;
+        background: rgba(0, 0, 0, 0.8);
+        border: 1px solid rgba(212, 175, 55, 0.4);
+        border-radius: 8px;
+        padding: 20px;
+        max-width: 280px;
+        pointer-events: auto;
+        font-size: 13px;
+        line-height: 1.6;
+        transition: opacity 0.5s ease;
+      }
+
+      #help-panel h3 {
+        color: #d4af37;
+        margin: 0 0 15px 0;
+        border-bottom: 1px solid #d4af37;
+        padding-bottom: 10px;
+        font-size: 16px;
+      }
+
+      #help-panel p {
+        margin: 8px 0;
+        color: #ccc;
+      }
+
+      #help-panel code {
+        background: rgba(212, 175, 55, 0.15);
+        padding: 2px 6px;
+        border-radius: 3px;
+        color: #d4af37;
+        font-family: monospace;
+      }
+
+      #help-panel hr {
+        border: none;
+        border-top: 1px solid #d4af37;
+        margin: 12px 0;
+      }
+
+      /* UI隐藏类 */
+      .ui-hidden #help-panel,
+      .ui-hidden .upload-wrapper {
+        opacity: 0;
+        pointer-events: none;
+      }
+
+      #webcam-wrapper.ui-hidden {
+        opacity: 0;
+        pointer-events: none !important;
+      }
+
+      /* 图片管理按钮 - 左下角 */
+      #manage-photos-btn {
+        position: absolute;
+        bottom: 40px;
+        left: 40px;
+        background: rgba(20, 20, 20, 0.6);
+        border: 1px solid rgba(212, 175, 55, 0.4);
+        color: #d4af37;
+        padding: 10px 25px;
+        cursor: pointer;
+        text-transform: uppercase;
+        letter-spacing: 3px;
+        font-size: 10px;
+        transition: all 0.4s;
+        display: inline-block;
+        backdrop-filter: blur(5px);
+        pointer-events: auto;
+      }
+      
+      #manage-photos-btn:hover {
+        background: #d4af37;
+        color: #000;
+        box-shadow: 0 0 20px rgba(212, 175, 55, 0.5);
+      }
+
+      /* 图片管理面板 */
+      #photo-manager {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.9);
+        z-index: 1000;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        pointer-events: auto;
+      }
+
+      #photo-manager.hidden {
+        display: none;
+      }
+
+      #manager-header {
+        color: #d4af37;
+        font-size: 24px;
+        margin-bottom: 30px;
+        text-align: center;
+        font-family: 'Cinzel', 'Times New Roman', serif;
+      }
+
+      #photo-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 150px);
+        gap: 20px;
+        max-width: 700px;
+        max-height: 70vh;
+        overflow-y: auto;
+        padding: 20px;
+      }
+
+      .photo-item {
+        position: relative;
+        width: 150px;
+        height: 150px;
+        border: 2px solid #d4af37;
+        background: rgba(0, 0, 0, 0.7);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+      }
+
+      .photo-item img {
+        max-width: 100%;
+        max-height: 100%;
+        object-fit: cover;
+      }
+
+      .delete-btn {
+        position: absolute;
+        top: -10px;
+        right: -10px;
+        width: 24px;
+        height: 24px;
+        background: #cc0000;
+        color: white;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        font-weight: bold;
+        font-size: 14px;
+        border: 2px solid #000;
+        z-index: 1001;
+      }
+
+      #close-manager {
+        margin-top: 30px;
+        background: rgba(20, 20, 20, 0.6);
+        border: 1px solid rgba(212, 175, 55, 0.4);
+        color: #d4af37;
+        padding: 10px 25px;
+        cursor: pointer;
+        text-transform: uppercase;
+        letter-spacing: 3px;
+        font-size: 10px;
+        transition: all 0.4s;
+        backdrop-filter: blur(5px);
+      }
+
+      #close-manager:hover {
+        background: #d4af37;
+        color: #000;
+        box-shadow: 0 0 20px rgba(212, 175, 55, 0.5);
+      }
+
+      /* Devokai 弹窗样式 */
+      #devokai-popup {
+        position: fixed;
+        bottom: -200px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: rgba(0, 0, 0, 0.8);
+        border: 2px solid rgba(212, 175, 55, 0.6);
+        border-radius: 15px;
+        padding: 20px;
+        max-width: 400px;
+        text-align: center;
+        z-index: 2000;
+        transition: bottom 0.3s ease-out;
+        backdrop-filter: blur(10px);
+        box-shadow: 0 0 30px rgba(212, 175, 55, 0.3);
+        cursor: pointer;
+      }
+
+      #devokai-popup.show {
+        bottom: 50px;
+      }
+
+      #devokai-popup.minimized {
+        bottom: -200px;
+        cursor: pointer;
+      }
+
+      /* 上边缘点击区域 */
+      #devokai-popup .top-edge {
+        position: absolute;
+        top: -10px;
+        left: 0;
+        right: 0;
+        height: 20px;
+        cursor: pointer;
+        z-index: 2001;
+      }
+
+      #devokai-popup .popup-content {
+        color: #d4af37;
+        font-size: 16px;
+        line-height: 1.6;
+        margin-bottom: 15px;
+        font-family: 'Cinzel', 'Times New Roman', serif;
+        text-shadow: 0 0 10px rgba(212, 175, 55, 0.5);
+      }
+
+      #devokai-popup .popup-logo {
+        width: 60px;
+        height: 60px;
+        margin: 0 auto 10px;
+        border-radius: 10px;
+        border: 1px solid rgba(212, 175, 55, 0.4);
+        background: rgba(255, 255, 255, 0.1);
+      }
+
+      #devokai-popup .popup-link {
+        color: #d4af37;
+        text-decoration: underline;
+        font-weight: bold;
+        transition: color 0.3s ease;
+      }
+
+      #devokai-popup .popup-link:hover {
+        color: #fff;
+        text-shadow: 0 0 15px rgba(212, 175, 55, 0.8);
+      }
+
+      #devokai-popup .close-btn {
+        position: absolute;
+        top: 10px;
+        right: 15px;
+        background: none;
+        border: none;
+        color: #d4af37;
+        font-size: 24px;
+        cursor: pointer;
+        padding: 0;
+        width: 30px;
+        height: 30px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: color 0.3s ease;
+      }
+
+      #devokai-popup .close-btn:hover {
+        color: #fff;
+      }
+    </style>
+
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&display=swap');
+    </style>
+
+    <script type="importmap">
+      {
+        "imports": {
+          "three": "./js_tree/three.module.js",
+          "three/addons/controls/OrbitControls.js": "./js_tree/OrbitControls.js",
+          "three/addons/postprocessing/EffectComposer.js": "./js_tree/EffectComposer.js",
+          "three/addons/postprocessing/RenderPass.js": "./js_tree/RenderPass.js",
+          "three/addons/postprocessing/UnrealBloomPass.js": "./js_tree/UnrealBloomPass.js",
+          "three/addons/environments/RoomEnvironment.js": "./js_tree/RoomEnvironment.js",
+          "@mediapipe/tasks-vision": "./js_tree/mediapipe-vision.js"
+        }
+      }
+    </script>
+  </head>
+  <body>
+    <div id="loader">
+      <div class="spinner"></div>
+      <div class="loader-text">Loading Holiday Magic</div>
+    </div>
+
+    <div id="canvas-container"></div>
+
+    <div id="ui-layer">
+      <!-- 左侧帮助面板 -->
+      <div id="help-panel">
+        <h3>🎄 控制说明</h3>
+        <p><code>👊</code> <b>握拳</b>：聚合树形</p>
+        <p><code>🖐️</code> <b>张开</b>：粒子散开</p>
+        <p><code>🤏</code> <b>捏夹</b>：照片聚焦</p>
+
+        <p><code>🤏</code> <b>一句话生成游戏搜WX小程序</b>：<br>飞写AI游戏生成器 <br>（内置Gemini3 pro）</p>
+      <p></p>
+
+
+        <hr />
+
+        <p><code>H</code> 键：隐藏UI</p>
+        <p style="font-size: 11px; color: #999; margin-top: 12px">
+          💡 可在上方上传照片
+        </p>
+      </div>
+
+      <h1>Merry Christmas</h1>
+
+      <div class="upload-wrapper">
+        <label class="upload-btn">
+          上传照片
+          <input type="file" id="file-input" multiple accept="image/*" />
+        </label>
+        <div class="hint-text">按 'H' 隐藏控制面板</div>
+      </div>
+      
+      <button id="manage-photos-btn" class="manage-photos-btn">
+        管理照片
+      </button>
+    </div>
+
+    <!-- 图片管理面板 -->
+    <div id="photo-manager" class="hidden">
+      <h2 id="manager-header">照片管理</h2>
+      <div id="photo-grid"></div>
+      <button id="close-manager">关闭管理器</button>
+    </div>
+
+    <!-- Webcam hidden structure -->
+    <div id="webcam-wrapper">
+      <video id="webcam" autoplay muted playsinline style="display: none"></video>
+      <canvas id="webcam-preview"></canvas>
+    </div>
+
+    <!-- Devokai 弹窗 -->
+    <div id="devokai-popup">
+      <div class="top-edge" onclick="showDevokaiPopup()"></div>
+      <button class="close-btn" onclick="closeDevokaiPopup()">×</button>
+      <img src="https://dev100-1256047633.cos.na-siliconvalley.myqcloud.com/game/images/devok1.png" alt="Devokai Logo" class="popup-logo">
+      <div class="popup-content">
+        此圣诞树用 devokai游戏生成器（内置gemini 3 pro）生成，一句话生成更多游戏：<br>
+        <a href="https://devokai.xfeixie.com/#/?lang=zh" class="popup-link" target="_blank">
+          https://devokai.xfeixie.com</a>
+      </div>
+    </div>
+
+    <script type="module">
+      import * as THREE from 'three'
+      import { OrbitControls } from 'three/addons/controls/OrbitControls.js'
+      import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js'
+      import { RenderPass } from 'three/addons/postprocessing/RenderPass.js'
+      import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js'
+      import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js'
+      import { FilesetResolver, HandLandmarker } from '@mediapipe/tasks-vision'
+
+      // --- CONFIGURATION ---
+      const CONFIG = {
+        colors: {
+          bg: 0x000000,
+          champagneGold: 0xffd966,
+          deepGreen: 0x03180a,
+          accentRed: 0x990000,
+        },
+        particles: {
+          count: 1500,
+          dustCount: 2500,
+          treeHeight: 24,
+          treeRadius: 8,
+        },
+        camera: {
+          z: 50,
+        },
+      }
+
+      const STATE = {
+        mode: 'TREE',
+        focusIndex: -1,
+        focusTarget: null,
+        hand: { detected: false, x: 0, y: 0 },
+        rotation: { x: 0, y: 0 },
+      }
+
+      let scene, camera, renderer, composer
+      let mainGroup
+      let clock = new THREE.Clock()
+      let particleSystem = []
+      let photoMeshGroup = new THREE.Group()
+      let handLandmarker, video, webcamCanvas, webcamCtx
+      let caneTexture
+
+      async function init() {
+        initThree()
+        setupEnvironment()
+        setupLights()
+        createTextures()
+        createParticles()
+        createDust()
+        createDefaultPhotos()
+        setupPostProcessing()
+        setupEvents()
+        await initMediaPipe()
+
+        const loader = document.getElementById('loader')
+        loader.style.opacity = 0
+        setTimeout(() => {
+          loader.remove()
+          // 显示Devokai弹窗
+          setTimeout(() => {
+            const popup = document.getElementById('devokai-popup')
+            popup.classList.add('show')
+          }, 1000)
+        }, 800)
+
+        animate()
+      }
+
+      function initThree() {
+        const container = document.getElementById('canvas-container')
+        scene = new THREE.Scene()
+        scene.background = new THREE.Color(CONFIG.colors.bg)
+        scene.fog = new THREE.FogExp2(CONFIG.colors.bg, 0.01)
+
+        camera = new THREE.PerspectiveCamera(
+          42,
+          window.innerWidth / window.innerHeight,
+          0.1,
+          1000
+        )
+        camera.position.set(0, 2, CONFIG.camera.z)
+
+        renderer = new THREE.WebGLRenderer({
+          antialias: true,
+          alpha: false,
+          powerPreference: 'high-performance',
+        })
+        renderer.setSize(window.innerWidth, window.innerHeight)
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
+        renderer.toneMapping = THREE.ReinhardToneMapping
+        renderer.toneMappingExposure = 2.2
+        container.appendChild(renderer.domElement)
+
+        mainGroup = new THREE.Group()
+        scene.add(mainGroup)
+      }
+
+      function setupEnvironment() {
+        const pmremGenerator = new THREE.PMREMGenerator(renderer)
+        scene.environment = pmremGenerator.fromScene(
+          new RoomEnvironment(),
+          0.04
+        ).texture
+      }
+
+      function setupLights() {
+        const ambient = new THREE.AmbientLight(0xffffff, 0.6)
+        scene.add(ambient)
+
+        const innerLight = new THREE.PointLight(0xffaa00, 2, 20)
+        innerLight.position.set(0, 5, 0)
+        mainGroup.add(innerLight)
+
+        const spotGold = new THREE.SpotLight(0xffcc66, 1200)
+        spotGold.position.set(30, 40, 40)
+        spotGold.angle = 0.5
+        spotGold.penumbra = 0.5
+        scene.add(spotGold)
+
+        const spotBlue = new THREE.SpotLight(0x6688ff, 600)
+        spotBlue.position.set(-30, 20, -30)
+        scene.add(spotBlue)
+
+        const fill = new THREE.DirectionalLight(0xffeebb, 0.8)
+        fill.position.set(0, 0, 50)
+        scene.add(fill)
+      }
+
+      function setupPostProcessing() {
+        const renderScene = new RenderPass(scene, camera)
+        const bloomPass = new UnrealBloomPass(
+          new THREE.Vector2(window.innerWidth, window.innerHeight),
+          1.5,
+          0.4,
+          0.85
+        )
+        bloomPass.threshold = 0.7
+        bloomPass.strength = 0.45
+        bloomPass.radius = 0.4
+
+        composer = new EffectComposer(renderer)
+        composer.addPass(renderScene)
+        composer.addPass(bloomPass)
+      }
+
+      function createTextures() {
+        const canvas = document.createElement('canvas')
+        canvas.width = 128
+        canvas.height = 128
+        const ctx = canvas.getContext('2d')
+        ctx.fillStyle = '#ffffff'
+        ctx.fillRect(0, 0, 128, 128)
+        ctx.fillStyle = '#880000'
+        ctx.beginPath()
+        for (let i = -128; i < 256; i += 32) {
+          ctx.moveTo(i, 0)
+          ctx.lineTo(i + 32, 128)
+          ctx.lineTo(i + 16, 128)
+          ctx.lineTo(i - 16, 0)
+        }
+        ctx.fill()
+        caneTexture = new THREE.CanvasTexture(canvas)
+        caneTexture.wrapS = THREE.RepeatWrapping
+        caneTexture.wrapT = THREE.RepeatWrapping
+        caneTexture.repeat.set(3, 3)
+      }
+
+      class Particle {
+        constructor(mesh, type, isDust = false) {
+          this.mesh = mesh
+          this.type = type
+          this.isDust = isDust
+
+          this.posTree = new THREE.Vector3()
+          this.posScatter = new THREE.Vector3()
+          this.baseScale = mesh.scale.x
+
+          // Individual Spin Speed
+          // Photos spin slower to be readable
+          const speedMult = type === 'PHOTO' ? 0.3 : 2.0
+
+          this.spinSpeed = new THREE.Vector3(
+            (Math.random() - 0.5) * speedMult,
+            (Math.random() - 0.5) * speedMult,
+            (Math.random() - 0.5) * speedMult
+          )
+
+          this.calculatePositions()
+        }
+
+        calculatePositions() {
+          // TREE: Tight Spiral
+          const h = CONFIG.particles.treeHeight
+          const halfH = h / 2
+          let t = Math.random()
+          t = Math.pow(t, 0.8)
+          const y = t * h - halfH
+          let rMax = CONFIG.particles.treeRadius * (1.0 - t)
+          if (rMax < 0.5) rMax = 0.5
+          const angle = t * 50 * Math.PI + Math.random() * Math.PI
+          const r = rMax * (0.8 + Math.random() * 0.4)
+          this.posTree.set(Math.cos(angle) * r, y, Math.sin(angle) * r)
+
+          // SCATTER: 3D Sphere
+          let rScatter = this.isDust
+            ? 12 + Math.random() * 20
+            : 8 + Math.random() * 12
+          const theta = Math.random() * Math.PI * 2
+          const phi = Math.acos(2 * Math.random() - 1)
+          this.posScatter.set(
+            rScatter * Math.sin(phi) * Math.cos(theta),
+            rScatter * Math.sin(phi) * Math.sin(theta),
+            rScatter * Math.cos(phi)
+          )
+        }
+
+        update(dt, mode, focusTargetMesh) {
+          let target = this.posTree
+
+          if (mode === 'SCATTER') target = this.posScatter
+          else if (mode === 'FOCUS') {
+            if (this.mesh === focusTargetMesh) {
+              const desiredWorldPos = new THREE.Vector3(0, 2, 35)
+              const invMatrix = new THREE.Matrix4()
+                .copy(mainGroup.matrixWorld)
+                .invert()
+              target = desiredWorldPos.applyMatrix4(invMatrix)
+            } else {
+              target = this.posScatter
+            }
+          }
+
+          // Movement Easing
+          const lerpSpeed =
+            mode === 'FOCUS' && this.mesh === focusTargetMesh ? 5.0 : 2.0
+          this.mesh.position.lerp(target, lerpSpeed * dt)
+
+          // Rotation Logic - CRITICAL: Ensure spin happens in Scatter
+          if (mode === 'SCATTER') {
+            this.mesh.rotation.x += this.spinSpeed.x * dt
+            this.mesh.rotation.y += this.spinSpeed.y * dt
+            this.mesh.rotation.z += this.spinSpeed.z * dt // Added Z for more natural tumble
+          } else if (mode === 'TREE') {
+            // Reset rotations slowly
+            this.mesh.rotation.x = THREE.MathUtils.lerp(
+              this.mesh.rotation.x,
+              0,
+              dt
+            )
+            this.mesh.rotation.z = THREE.MathUtils.lerp(
+              this.mesh.rotation.z,
+              0,
+              dt
+            )
+            this.mesh.rotation.y += 0.5 * dt
+          }
+
+          if (mode === 'FOCUS' && this.mesh === focusTargetMesh) {
+            this.mesh.lookAt(camera.position)
+          }
+
+          // Scale Logic
+          let s = this.baseScale
+          if (this.isDust) {
+            s =
+              this.baseScale *
+              (0.8 + 0.4 * Math.sin(clock.elapsedTime * 4 + this.mesh.id))
+            if (mode === 'TREE') s = 0
+          } else if (mode === 'SCATTER' && this.type === 'PHOTO') {
+            // Large preview size in scatter
+            s = this.baseScale * 2.5
+          } else if (mode === 'FOCUS') {
+            if (this.mesh === focusTargetMesh) s = 4.5
+            else s = this.baseScale * 0.8
+          }
+
+          this.mesh.scale.lerp(new THREE.Vector3(s, s, s), 4 * dt)
+        }
+      }
+
+      // --- CREATION ---
+      function createParticles() {
+        const sphereGeo = new THREE.SphereGeometry(0.5, 32, 32)
+        const boxGeo = new THREE.BoxGeometry(0.55, 0.55, 0.55)
+        const curve = new THREE.CatmullRomCurve3([
+          new THREE.Vector3(0, -0.5, 0),
+          new THREE.Vector3(0, 0.3, 0),
+          new THREE.Vector3(0.1, 0.5, 0),
+          new THREE.Vector3(0.3, 0.4, 0),
+        ])
+        const candyGeo = new THREE.TubeGeometry(curve, 16, 0.08, 8, false)
+
+        const goldMat = new THREE.MeshStandardMaterial({
+          color: CONFIG.colors.champagneGold,
+          metalness: 1.0,
+          roughness: 0.1,
+          envMapIntensity: 2.0,
+          emissive: 0x443300,
+          emissiveIntensity: 0.3,
+        })
+
+        const greenMat = new THREE.MeshStandardMaterial({
+          color: CONFIG.colors.deepGreen,
+          metalness: 0.2,
+          roughness: 0.8,
+          emissive: 0x002200,
+          emissiveIntensity: 0.2,
+        })
+
+        const redMat = new THREE.MeshPhysicalMaterial({
+          color: CONFIG.colors.accentRed,
+          metalness: 0.3,
+          roughness: 0.2,
+          clearcoat: 1.0,
+          emissive: 0x330000,
+        })
+
+        const candyMat = new THREE.MeshStandardMaterial({
+          map: caneTexture,
+          roughness: 0.4,
+        })
+
+        for (let i = 0; i < CONFIG.particles.count; i++) {
+          const rand = Math.random()
+          let mesh, type
+
+          if (rand < 0.4) {
+            mesh = new THREE.Mesh(boxGeo, greenMat)
+            type = 'BOX'
+          } else if (rand < 0.7) {
+            mesh = new THREE.Mesh(boxGeo, goldMat)
+            type = 'GOLD_BOX'
+          } else if (rand < 0.92) {
+            mesh = new THREE.Mesh(sphereGeo, goldMat)
+            type = 'GOLD_SPHERE'
+          } else if (rand < 0.97) {
+            mesh = new THREE.Mesh(sphereGeo, redMat)
+            type = 'RED'
+          } else {
+            mesh = new THREE.Mesh(candyGeo, candyMat)
+            type = 'CANE'
+          }
+
+          const s = 0.4 + Math.random() * 0.5
+          mesh.scale.set(s, s, s)
+          mesh.rotation.set(
+            Math.random() * 6,
+            Math.random() * 6,
+            Math.random() * 6
+          )
+
+          mainGroup.add(mesh)
+          particleSystem.push(new Particle(mesh, type, false))
+        }
+
+        const starGeo = new THREE.OctahedronGeometry(1.2, 0)
+        const starMat = new THREE.MeshStandardMaterial({
+          color: 0xffdd88,
+          emissive: 0xffaa00,
+          emissiveIntensity: 1.0,
+          metalness: 1.0,
+          roughness: 0,
+        })
+        const star = new THREE.Mesh(starGeo, starMat)
+        star.position.set(0, CONFIG.particles.treeHeight / 2 + 1.2, 0)
+        mainGroup.add(star)
+
+        mainGroup.add(photoMeshGroup)
+      }
+
+      function createDust() {
+        const geo = new THREE.TetrahedronGeometry(0.08, 0)
+        const mat = new THREE.MeshBasicMaterial({
+          color: 0xffeebb,
+          transparent: true,
+          opacity: 0.8,
+        })
+
+        for (let i = 0; i < CONFIG.particles.dustCount; i++) {
+          const mesh = new THREE.Mesh(geo, mat)
+          mesh.scale.setScalar(0.5 + Math.random())
+          mainGroup.add(mesh)
+          particleSystem.push(new Particle(mesh, 'DUST', true))
+        }
+      }
+
+      function createDefaultPhotos() {
+        const canvas = document.createElement('canvas')
+        canvas.width = 512
+        canvas.height = 512
+        const ctx = canvas.getContext('2d')
+        ctx.fillStyle = '#050505'
+        ctx.fillRect(0, 0, 512, 512)
+        ctx.strokeStyle = '#eebb66'
+        ctx.lineWidth = 15
+        ctx.strokeRect(20, 20, 472, 472)
+        ctx.font = '500 60px Times New Roman'
+        ctx.fillStyle = '#eebb66'
+        ctx.textAlign = 'center'
+        ctx.fillText('By', 256, 230)
+        ctx.fillText('Youhun', 256, 300)
+
+        const tex = new THREE.CanvasTexture(canvas)
+        tex.colorSpace = THREE.SRGBColorSpace
+        addPhotoToScene(tex)
+      }
+
+      function addPhotoToScene(texture) {
+        const frameGeo = new THREE.BoxGeometry(1.4, 1.4, 0.05)
+        const frameMat = new THREE.MeshStandardMaterial({
+          color: CONFIG.colors.champagneGold,
+          metalness: 1.0,
+          roughness: 0.1,
+        })
+        const frame = new THREE.Mesh(frameGeo, frameMat)
+
+        const photoGeo = new THREE.PlaneGeometry(1.2, 1.2)
+        const photoMat = new THREE.MeshBasicMaterial({ map: texture })
+        const photo = new THREE.Mesh(photoGeo, photoMat)
+        photo.position.z = 0.04
+
+        const group = new THREE.Group()
+        group.add(frame)
+        group.add(photo)
+
+        const s = 0.8
+        group.scale.set(s, s, s)
+
+        photoMeshGroup.add(group)
+        particleSystem.push(new Particle(group, 'PHOTO', false))
+      }
+
+      function handleImageUpload(e) {
+        const files = e.target.files
+        if (!files.length) return
+        Array.from(files).forEach((f) => {
+          const reader = new FileReader()
+          reader.onload = (ev) => {
+            new THREE.TextureLoader().load(ev.target.result, (t) => {
+              t.colorSpace = THREE.SRGBColorSpace
+              addPhotoToScene(t)
+            })
+          }
+          reader.readAsDataURL(f)
+        })
+      }
+
+      // --- MEDIAPIPE ---
+      async function initMediaPipe() {
+        video = document.getElementById('webcam')
+        webcamCanvas = document.getElementById('webcam-preview')
+        webcamCtx = webcamCanvas.getContext('2d')
+        webcamCanvas.width = 160
+        webcamCanvas.height = 120
+
+        try {
+          console.log('Loading MediaPipe vision...')
+          const vision = await FilesetResolver.forVisionTasks(
+            './js_tree/wasm'
+          )
+          console.log('Vision loaded, creating HandLandmarker...')
+          handLandmarker = await HandLandmarker.createFromOptions(vision, {
+            baseOptions: {
+              modelAssetPath: `./js_tree/hand_landmarker.task`,
+              delegate: 'GPU',
+            },
+            runningMode: 'VIDEO',
+            numHands: 1,
+          })
+          console.log('HandLandmarker created successfully')
+        } catch (error) {
+          console.error('MediaPipe initialization failed:', error)
+          return
+        }
+
+        if (navigator.mediaDevices?.getUserMedia) {
+          try {
+            console.log('Requesting camera access...')
+            const stream = await navigator.mediaDevices.getUserMedia({
+              video: { width: 640, height: 480 },
+            })
+            video.srcObject = stream
+            video.muted = true
+            console.log('Camera stream obtained')
+
+            // 重要：确保播放视频
+            const playPromise = video.play()
+            if (playPromise !== undefined) {
+              playPromise
+                .then(() => {
+                  console.log('Video playing successfully')
+                  requestAnimationFrame(predictWebcam)
+                })
+                .catch((err) => {
+                  console.error('Video play failed:', err)
+                })
+            }
+          } catch (error) {
+            console.error('Failed to access camera:', error)
+          }
+        } else {
+          console.error('getUserMedia not available - need HTTPS or localhost')
+        }
+      }
+
+      let lastVideoTime = -1
+      async function predictWebcam() {
+        if (video.currentTime !== lastVideoTime) {
+          lastVideoTime = video.currentTime
+          if (handLandmarker) {
+            const result = handLandmarker.detectForVideo(
+              video,
+              performance.now()
+            )
+            processGestures(result)
+          }
+        }
+
+        // Draw video frame to canvas
+        if (video.readyState === video.HAVE_ENOUGH_DATA) {
+          webcamCtx.drawImage(video, 0, 0, webcamCanvas.width, webcamCanvas.height)
+        }
+
+        requestAnimationFrame(predictWebcam)
+      }
+
+      function processGestures(result) {
+        if (result.landmarks && result.landmarks.length > 0) {
+          STATE.hand.detected = true
+          const lm = result.landmarks[0]
+          STATE.hand.x = (lm[9].x - 0.5) * 2
+          STATE.hand.y = (lm[9].y - 0.5) * 2
+
+          const thumb = lm[4]
+          const index = lm[8]
+          const wrist = lm[0]
+          const palm = lm[9] // 手掌中心
+
+          // 捏夹距离：大拇指和食指
+          const pinchDist = Math.hypot(thumb.x - index.x, thumb.y - index.y)
+
+          // 握拳检测：计算所有手指尖到手掌中心的距离
+          const fingerTips = [lm[8], lm[12], lm[16], lm[20]]
+          let fistDistance = 0
+          fingerTips.forEach((tip) => {
+            fistDistance += Math.hypot(tip.x - palm.x, tip.y - palm.y)
+          })
+          fistDistance /= 4
+
+          // 张开手势：手指尖到手腕的平均距离
+          const tips = [lm[8], lm[12], lm[16], lm[20]]
+          let avgDist = 0
+          tips.forEach(
+            (t) => (avgDist += Math.hypot(t.x - wrist.x, t.y - wrist.y))
+          )
+          avgDist /= 4
+
+          // 修改逻辑：优先检查握拳（更严格），避免与捏夹冲突
+          if (fistDistance < 0.18) {
+            // 握拳：手指都靠近手掌中心
+            STATE.mode = 'TREE'
+            STATE.focusTarget = null
+          } else if (pinchDist < 0.045 && avgDist > 0.28) {
+            // 捏夹：大拇指和食指靠很近，且不是握拳状态
+            if (STATE.mode !== 'FOCUS') {
+              STATE.mode = 'FOCUS'
+              const photos = particleSystem.filter((p) => p.type === 'PHOTO')
+              if (photos.length)
+                STATE.focusTarget =
+                  photos[Math.floor(Math.random() * photos.length)].mesh
+            }
+          } else if (avgDist > 0.4) {
+            // 张开手势
+            STATE.mode = 'SCATTER'
+            STATE.focusTarget = null
+          }
+        } else {
+          STATE.hand.detected = false
+        }
+      }
+
+      function setupEvents() {
+        window.addEventListener('resize', () => {
+          camera.aspect = window.innerWidth / window.innerHeight
+          camera.updateProjectionMatrix()
+          renderer.setSize(window.innerWidth, window.innerHeight)
+          composer.setSize(window.innerWidth, window.innerHeight)
+        })
+        document
+          .getElementById('file-input')
+          .addEventListener('change', handleImageUpload)
+
+        // 图片管理功能
+        document
+          .getElementById('manage-photos-btn')
+          .addEventListener('click', showPhotoManager)
+          
+        document
+          .getElementById('close-manager')
+          .addEventListener('click', hidePhotoManager)
+
+        // Toggle UI logic - Hide/Show all UI controls
+        window.addEventListener('keydown', (e) => {
+          if (e.key.toLowerCase() === 'h') {
+            const uiLayer = document.getElementById('ui-layer')
+            const webcamWrapper = document.getElementById('webcam-wrapper')
+            const devokaiPopup = document.getElementById('devokai-popup')
+            if (uiLayer) {
+              uiLayer.classList.toggle('ui-hidden')
+            }
+            if (webcamWrapper) {
+              webcamWrapper.classList.toggle('ui-hidden')
+            }
+            if (devokaiPopup) {
+              devokaiPopup.classList.toggle('ui-hidden')
+            }
+          }
+        })
+      }
+
+      // 显示图片管理面板
+      function showPhotoManager() {
+        updatePhotoGrid()
+        document.getElementById('photo-manager').classList.remove('hidden')
+      }
+
+      // 隐藏图片管理面板
+      function hidePhotoManager() {
+        document.getElementById('photo-manager').classList.add('hidden')
+      }
+
+      // 更新图片网格
+      function updatePhotoGrid() {
+        const photoGrid = document.getElementById('photo-grid')
+        photoGrid.innerHTML = ''
+        
+        // 获取所有照片粒子
+        const photoParticles = particleSystem.filter(p => p.type === 'PHOTO')
+        
+        photoParticles.forEach((particle, index) => {
+          const photoItem = document.createElement('div')
+          photoItem.className = 'photo-item'
+          
+          // 获取照片纹理
+          const photoMesh = particle.mesh.children[1];
+          let imgUrl = '';
+          
+          if (photoMesh && photoMesh.material && photoMesh.material.map) {
+            const texture = photoMesh.material.map;
+            if (texture.image && texture.image.currentSrc) {
+              imgUrl = texture.image.currentSrc;
+            } else if (texture.image && texture.image.src) {
+              imgUrl = texture.image.src;
+            }
+          }
+          
+          photoItem.innerHTML = `
+            <img src="${imgUrl}" alt="Photo ${index + 1}" onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"100\" height=\"100\" viewBox=\"0 0 24 24\"><rect width=\"24\" height=\"24\" fill=\"%23222\"/><text x=\"12\" y=\"16\" font-family=\"Arial\" font-size=\"12\" fill=\"%23ddd\" text-anchor=\"middle\">No Image</text></svg>'">
+            <div class="delete-btn" data-index="${index}">×</div>
+          `
+          photoGrid.appendChild(photoItem)
+        })
+        
+        // 添加删除按钮事件监听器
+        document.querySelectorAll('.delete-btn').forEach(btn => {
+          btn.addEventListener('click', function() {
+            const index = parseInt(this.getAttribute('data-index'))
+            deletePhoto(index)
+          })
+        })
+      }
+
+      // 删除照片
+      function deletePhoto(index) {
+        // 获取所有照片粒子
+        const photoParticles = particleSystem.filter(p => p.type === 'PHOTO')
+        
+        if (index >= 0 && index < photoParticles.length) {
+          const particleToDelete = photoParticles[index]
+          
+          // 从场景中移除网格
+          if (particleToDelete.mesh && particleToDelete.mesh.parent) {
+            particleToDelete.mesh.parent.remove(particleToDelete.mesh)
+          }
+          
+          // 从particleSystem数组中移除粒子
+          const particleIndex = particleSystem.indexOf(particleToDelete)
+          if (particleIndex > -1) {
+            particleSystem.splice(particleIndex, 1)
+          }
+          
+          // 从photoMeshGroup中移除
+          if (photoMeshGroup && particleToDelete.mesh) {
+            photoMeshGroup.remove(particleToDelete.mesh)
+          }
+          
+          // 更新照片网格
+          updatePhotoGrid()
+        }
+      }
+
+      function animate() {
+        requestAnimationFrame(animate)
+        const dt = clock.getDelta()
+
+        // Rotation Logic
+        if (STATE.mode === 'SCATTER' && STATE.hand.detected) {
+          const targetRotY = STATE.hand.x * Math.PI * 0.9
+          const targetRotX = STATE.hand.y * Math.PI * 0.25
+          STATE.rotation.y += (targetRotY - STATE.rotation.y) * 3.0 * dt
+          STATE.rotation.x += (targetRotX - STATE.rotation.x) * 3.0 * dt
+        } else {
+          if (STATE.mode === 'TREE') {
+            STATE.rotation.y += 0.3 * dt
+            STATE.rotation.x += (0 - STATE.rotation.x) * 2.0 * dt
+          } else {
+            STATE.rotation.y += 0.1 * dt
+          }
+        }
+
+        mainGroup.rotation.y = STATE.rotation.y
+        mainGroup.rotation.x = STATE.rotation.x
+
+        particleSystem.forEach((p) =>
+          p.update(dt, STATE.mode, STATE.focusTarget)
+        )
+        composer.render()
+      }
+
+      init()
+    </script>
+
+    <script>
+      // 关闭Devokai弹窗
+      function closeDevokaiPopup() {
+        const popup = document.getElementById('devokai-popup')
+        popup.classList.remove('show')
+        popup.classList.add('minimized')
+      }
+
+      // 显示Devokai弹窗
+      function showDevokaiPopup() {
+        const popup = document.getElementById('devokai-popup')
+        popup.classList.remove('minimized')
+        popup.classList.add('show')
+      }
+    </script>
+  </body>
+</html>
